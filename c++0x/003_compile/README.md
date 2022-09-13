@@ -6,7 +6,7 @@ We'll generate `.s` from source file (not `.ii` file) as there is an `-S` option
 
 ## clang++
 
-Check the compiled file with 'clang++ -S' option:
+Generate the compiled file with 'clang++ -S' option:
 
 ```bash
 clang++ --help | grep -e "^\s*-S"
@@ -27,7 +27,7 @@ Note:
 
 ## g++
 
-Check the preprocessed file with 'g++ -S' option:
+Generate the preprocessed file with 'g++ -S' option:
 
 ```bash
 g++ -S hello_world.cpp

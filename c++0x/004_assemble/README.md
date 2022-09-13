@@ -6,7 +6,7 @@ We'll generate `.o` from source file (not `.o` file) as there is an `-c` option 
 
 ## clang++
 
-Check the compiled file with 'clang++ -c' option:
+Generate the compiled file with 'clang++ -c' option:
 
 ```bash
 clang++ --help | grep -e "^\s*-c\s\+"
@@ -21,7 +21,7 @@ clang++ -c hello_world.cpp
 
 ## g++
 
-Check the preprocessed file with 'g++ -c' option:
+Generate the preprocessed file with 'g++ -c' option:
 
 ```bash
 g++ -c hello_world.cpp
