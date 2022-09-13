@@ -8,4 +8,4 @@ Knowledge base of language C and C++.
 
 - use google code style format by default
 
-- if the code is `bash`, the first line(s) are bash commands, the rest is output
+- if the code is `bash`, the first line(s) are bash commands, the rest(s) are output
