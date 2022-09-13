@@ -1,28 +1,53 @@
-# Assemble
+# Link
 
-Compilation step is take the input file `.s` and generate the assembly code `.o`.
-
-We'll generate `.o` from source file (not `.o` file) as there is an `-c` option to run `preprocess`, `compile` and `assemble` steps at the same time..
+Generate the executable file `a.out` by the linker.
 
 ## clang++
 
-Check the compiled file with 'clang++ -c' option:
-
 ```bash
-clang++ --help | grep -e "^\s*-c\s\+"
-  -c    Only run preprocess, compile, and assemble steps
+clang++ hello_world.o
 ```
 
+`a.out` file will be generated.
+
+Alternatively, we can use `-o` option to specify the output file name.
+
 ```bash
-clang++ -c hello_world.cpp
+clang++ hello_world.o -o hello_world
 ```
 
-`hello_world.o` file will be generated.
+This is actually by the linker.
+
+For example, `std::cout` is defined and implemented in standard library, so the linker will find it (actually here is is `libstdc++.so` ) and link to `hello_world.o` file.
+
+Note:
+
+- We can also use the original source code file to generate executable file (instead of `.o` file).
+
+### ldd
+
+We can use `ldd` to check which libraries are linked for the executable file.
+
+```bash
+ldd a.out 
+    linux-vdso.so.1 (0x00007fffdc1fb000)
+    libstdc++.so.6 => /lib/x86_64-linux-gnu/libstdc++.so.6 (0x00007f4000757000)
+    libm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007f4000608000)
+    libgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x00007f40005ed000)
+    libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f40003fb000)
+    /lib64/ld-linux-x86-64.so.2 (0x00007f4000950000)
+```
 
 ## g++
 
-Check the preprocessed file with 'g++ -c' option:
+```bash
+g++ hello_world.o
+```
+
+`a.out` file will be generated.
+
+Alternatively, we can use `-o` option to specify the output file name.
 
 ```bash
-g++ -c hello_world.cpp
+g++ hello_world.o -o hello_world
 ```
