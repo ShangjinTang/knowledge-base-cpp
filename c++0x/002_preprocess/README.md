@@ -17,7 +17,7 @@ All comments will be ignored in the preprocessed file.
 Check the preprocessed file with 'clang++ -E' option:
 
 ```bash
-% clang++ --help | grep -e "^\s*-E"
+clang++ --help | grep -e "^\s*-E"
   -E    Only run the preprocessor
 ```
 
