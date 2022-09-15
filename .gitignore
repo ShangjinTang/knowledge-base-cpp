@@ -1,6 +1,10 @@
 # Version Control Ignore
 
-.vscode
+.vscode/
+
+# Cmake Ignore
+
+build/
 
 # C++ Ignore
 
