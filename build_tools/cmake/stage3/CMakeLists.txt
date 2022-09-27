@@ -15,3 +15,8 @@ target_include_directories(hello-world PUBLIC
                           "${PROJECT_BINARY_DIR}"
                           "${PROJECT_SOURCE_DIR}/lib"
                           )
+
+add_custom_target(run
+    COMMAND hello-world
+    WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}
+)
