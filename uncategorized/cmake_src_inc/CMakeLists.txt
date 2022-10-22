@@ -9,5 +9,12 @@ add_subdirectory(src)
 
 add_custom_target(run
     COMMAND src/prog
+    DEPENDS src/prog
+    WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}
+)
+
+add_custom_target(lldb
+    COMMAND lldb src/prog
+    DEPENDS src/prog
     WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}
 )
