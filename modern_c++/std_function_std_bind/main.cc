@@ -23,7 +23,7 @@ class Atlas {
 
   private:
     void add(int a, int b) {
-        std::cout << y << std::endl;
+        std::cout << x << y << std::endl;
         std::cout << a + b << std::endl;
     }
     Blas blas;
