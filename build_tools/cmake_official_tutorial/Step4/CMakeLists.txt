@@ -10,10 +10,16 @@ project(Tutorial VERSION 1.0)
 #   Hint: use add_library() with the INTERFACE signature
 # * Add compiler feature cxx_std_11 to tutorial_compiler_flags
 #   Hint: Use target_compile_features()
+add_library(tutorial_compiler_flags INTERFACE)
+target_compile_features(
+  tutorial_compiler_flags
+  INTERFACE
+  cxx_std_11
+)
 
 # specify the C++ standard
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+# set(CMAKE_CXX_STANDARD 11)
+# set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # TODO 5: Create helper variables to determine which compiler we are using:
 # * Create a new variable gcc_like_cxx that is true if we are using CXX and
@@ -49,7 +55,8 @@ add_executable(Tutorial tutorial.cxx)
 
 # TODO 2: Link to tutorial_compiler_flags
 
-target_link_libraries(Tutorial PUBLIC ${EXTRA_LIBS})
+# target_link_libraries(Tutorial PUBLIC ${EXTRA_LIBS})
+target_link_libraries(Tutorial PUBLIC ${EXTRA_LIBS} tutorial_compiler_flags)
 
 # add the binary tree to the search path for include files
 # so that we will find TutorialConfig.h
