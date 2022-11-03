@@ -1,0 +1,8 @@
+cc_binary {
+    name: "lightpointer-bp-dynamic",
+    srcs: ["lightpointer.cpp"],
+    shared_libs: [
+        "liblog",
+        "libutils",
+    ],
+}
