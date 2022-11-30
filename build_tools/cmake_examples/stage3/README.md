@@ -1,6 +1,7 @@
 # Stage 3
 
-In this stage we step it up and showcase how to integrate multiple targets from different packages.
+Note: the `include_directories(".")` in top `CMakeLists.txt` is very important.
+Without this, we cannot include sources with subdirectory such as `#include "lib/hello-time.h"` or `#include "main/hello-greet.h"`.
 
 To build this example, use
 
@@ -9,8 +10,5 @@ mkdir build
 cd build
 cmake ..
 make
-```
-
-```bash
-./hello-world
+make run
 ```

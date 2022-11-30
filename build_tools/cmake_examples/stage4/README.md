@@ -1,6 +1,11 @@
-# Stage 3
+# Stage 4
 
-In this stage we step it up and showcase how to integrate multiple CMakeLists.txt for large projects.
+This is similar to **Stage 3** but the files are slightly different.
+
+Stage 3 -> Stage 4:
+
+- #include "lib/hello-time.h" -> #include "hello-time.h"
+- #include "main/hello-greet.h" -> #include "hello-greet.h"
 
 To build this example, use
 
@@ -9,8 +14,5 @@ mkdir build
 cd build
 cmake ..
 make
-```
-
-```bash
-./main/src/hello-world
+make run
 ```

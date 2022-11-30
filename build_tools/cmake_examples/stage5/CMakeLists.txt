@@ -7,6 +7,7 @@ set(CMAKE_STATIC_LIBRARY_PREFIX "")
 # set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-include_directories(".")
 add_subdirectory(lib)
+
+set(LibIncDirectory ${CMAKE_SOURCE_DIR}/lib/inc)
 add_subdirectory(main)

@@ -7,8 +7,5 @@ mkdir build
 cd build
 cmake ..
 make
-```
-
-```bash
-./hello-world
+make run
 ```
