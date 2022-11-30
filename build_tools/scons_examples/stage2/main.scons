@@ -1,0 +1,23 @@
+import os
+
+VARIANT_DIR = 'build'
+TARGET = 'bin/hello-world'
+
+target_executable = os.path.join('.', VARIANT_DIR, TARGET)
+
+env = Environment(
+    CXXFLAGS="-std=c++20"
+)
+
+env.Program(
+    target = TARGET,
+    source = [Glob('main/*.h'), Glob('main/*.cc')]
+)
+
+run = Command(
+    target = "run",
+    source = target_executable,
+    action = [target_executable]
+)
+
+AlwaysBuild(run)

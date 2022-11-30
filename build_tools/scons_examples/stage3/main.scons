@@ -1,0 +1,33 @@
+import os
+
+VARIANT_DIR = 'build'
+LIBPATH = 'lib'
+LIB = 'hellotime'
+TARGET = 'bin/hello-world'
+
+env = Environment(
+    CXXFLAGS="-std=c++20"
+)
+
+env.StaticLibrary(
+    target = os.path.join(LIBPATH, LIB),
+    source = [Glob('lib/*.cc')],
+    CPPPATH = '.'
+)
+
+env.Program(
+    target = TARGET,
+    source = [Glob('main/*.h'), Glob('main/*.cc')],
+    LIBS = [LIB],
+    LIBPATH = LIBPATH,
+    CPPPATH = '.'
+)
+
+target_executable = os.path.join('.', VARIANT_DIR, TARGET)
+run = Command(
+    target = "run",
+    source = target_executable,
+    action = [target_executable]
+)
+
+AlwaysBuild(run)
