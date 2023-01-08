@@ -11,7 +11,7 @@ env = Environment(
 
 env.Program(
     target = TARGET,
-    source = ['main/hello-world.cc']
+    source = ['main/hello-world.cpp']
 )
 
 run = Command(

@@ -4,17 +4,17 @@ This is similar to **Stage 4** but the files are slightly different.
 
 Stage 4 directory structure:
 
-- lib (.h & .cc under same directory)
-- main (.h & .cc under same directory)
+- lib (.h & .cpp under same directory)
+- main (.h & .cpp under same directory)
 
 Stage 5 directory structure:
 
-- lib (.h & .cc under seperate directories)
+- lib (.h & .cpp under seperate directories)
   - inc (.h file)
-  - src (.cc file)
-- main (.h & .cc under seperate directories)
+  - src (.cpp file)
+- main (.h & .cpp under seperate directories)
   - inc (.h file)
-  - src (.cc file)
+  - src (.cpp file)
 
 To build this example, use
 

@@ -8,7 +8,7 @@ In the ```cc_binary``` rule, name of the binary is specified in ```name``` attri
 ```
 cc_binary(
     name = "hello-world",
-    srcs = ["hello-world.cc"],
+    srcs = ["hello-world.cpp"],
 )
 ```
 

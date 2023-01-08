@@ -11,13 +11,13 @@ env = Environment(
 
 env.StaticLibrary(
     target = os.path.join(LIBPATH, LIB),
-    source = [Glob('lib/*.cc')],
+    source = [Glob('lib/*.cpp')],
     CPPPATH = '.'
 )
 
 env.Program(
     target = TARGET,
-    source = [Glob('main/*.h'), Glob('main/*.cc')],
+    source = [Glob('main/*.h'), Glob('main/*.cpp')],
     LIBS = [LIB],
     LIBPATH = LIBPATH,
     CPPPATH = '.'

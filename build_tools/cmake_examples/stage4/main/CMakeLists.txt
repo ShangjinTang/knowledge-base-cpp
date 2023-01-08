@@ -1,4 +1,4 @@
-file(GLOB hello-world_src CONFIGURE_DEPENDS "*.h" "*.cc")
+file(GLOB hello-world_src CONFIGURE_DEPENDS "*.h" "*.cpp")
 
 add_executable(hello-world ${hello-world_src})
 

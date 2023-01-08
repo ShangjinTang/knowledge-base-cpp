@@ -11,7 +11,7 @@ env = Environment(
 
 env.Program(
     target = TARGET,
-    source = [Glob('main/*.h'), Glob('main/*.cc')]
+    source = [Glob('main/*.h'), Glob('main/*.cpp')]
 )
 
 run = Command(

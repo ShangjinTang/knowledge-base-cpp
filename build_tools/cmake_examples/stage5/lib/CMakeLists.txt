@@ -1,4 +1,4 @@
-file(GLOB lib_src CONFIGURE_DEPENDS "src/*.cc")
+file(GLOB lib_src CONFIGURE_DEPENDS "src/*.cpp")
 
 add_library(libhellotime STATIC ${lib_src})
 

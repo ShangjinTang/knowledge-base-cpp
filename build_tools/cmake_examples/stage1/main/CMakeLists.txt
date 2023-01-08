@@ -1,4 +1,4 @@
-add_executable(hello-world hello-world.cc)
+add_executable(hello-world hello-world.cpp)
 
 add_custom_target(
   run

@@ -1,4 +1,4 @@
-file(GLOB main_src CONFIGURE_DEPENDS "src/*.cc")
+file(GLOB main_src CONFIGURE_DEPENDS "src/*.cpp")
 
 add_executable(hello-world ${main_src})
 

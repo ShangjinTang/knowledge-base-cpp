@@ -7,7 +7,7 @@ Below, we see a similar configuration from Stage 2, except that this BUILD file 
 ```
 cc_library(
     name = "hello-time",
-    srcs = ["hello-time.cc"],
+    srcs = ["hello-time.cpp"],
     hdrs = ["hello-time.h"],
     visibility = ["//main:__pkg__"],
 )
@@ -18,7 +18,7 @@ To use our ```hello-time``` library, an extra dependency is added in the form of
 ```
 cc_binary(
     name = "hello-world",
-    srcs = ["hello-world.cc"],
+    srcs = ["hello-world.cpp"],
     deps = [
         ":hello-greet",
         "//lib:hello-time",

@@ -6,7 +6,7 @@ Here, we introduce the ```cc_library``` rule for building C++ libraries. We have
 ```
 cc_library(
     name = "hello-greet",
-    srcs = ["hello-greet.cc"],
+    srcs = ["hello-greet.cpp"],
     hdrs = ["hello-greet.h"],
 )
 ```
@@ -17,7 +17,7 @@ The ```cc_binary``` rule we saw in stage 1 has not changed, except that we now d
 ```
 cc_binary(
     name = "hello-world",
-    srcs = ["hello-world.cc"],
+    srcs = ["hello-world.cpp"],
     deps = [
         ":hello-greet",
     ],
