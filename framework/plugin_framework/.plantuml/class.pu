@@ -1,0 +1,106 @@
+@startuml
+class "File" as C_0001831533805594469151
+class C_0001831533805594469151 {
++File(std::string path, std::string name) : void
++getFullName() : std::string
+-path : std::string
+-name : std::string
+}
+class "SearchPath" as C_0001239930631957938648
+class C_0001239930631957938648 {
+-parsePath() : void
+{static} +fileAccessible(std::string path, std::string filename) : bool
++SearchPath(std::string path) : void
++findFile(std::string filename) : std::shared_ptr<File>
+-path : std::string
+-parsedPath : std::vector<std::string>
+{static} +SEPARATOR : const char *const
+}
+class "returnable<R>" as C_0001177672994416072102
+class C_0001177672994416072102 {
+{static} +value() : R
+}
+class "returnable<void>" as C_0001685668650836176803
+class C_0001685668650836176803 {
+}
+class "ModuleHandle" as C_0000829810201714807217
+class C_0000829810201714807217 {
+-findSymbol(std::string symname) : void *
++ModuleHandle(std::string path) : void
++~ModuleHandle() : void
++getNativeHandle() : ModuleHandle::NativeHandleType
++getSym<T>(const std::string symname) : std::shared_ptr<ModuleSym<T> >
++call<R,Args...>(std::string name, Args... args) : R
+-handle : ModuleHandle::NativeHandleType
+-symbols : ModuleHandle::map
+}
+class "ModuleHandle::ModuleSym<T>" as C_0001918742549770748049
+class C_0001918742549770748049 {
++ModuleSym<T>(std::shared_ptr<ModuleHandle> owner, std::string name, T & thing) : void
++~ModuleSym<T>() : void
++get() : T &
+-owner : std::shared_ptr<ModuleHandle>
+-name : std::string
+-thing : T &
+}
+class "ModuleHandle::ModuleSym<>" as C_0002116560727190644463
+class C_0002116560727190644463 {
+}
+class "LoadableModule" as C_0002248952126325652250
+class C_0002248952126325652250 {
+#exists() : bool
+#defaultPath() : std::string
++LoadableModule(std::string name, std::string path = "") : void
++setPath(std::string path) : void
++setlibraryName(std::string libraryName) : void
++isLoaded() : bool
++load() : std::shared_ptr<ModuleHandle>
++unload() : void
++init() : LoadableHeader *
++deinit() : int
++call<R,Args...>(std::string name, Args... args) : R
+-name : std::string
+-path : SearchPath
+-libraryName : std::string
+-fullName : std::string
+-handle : std::shared_ptr<ModuleHandle>
+-loadable_init : std::shared_ptr<initfuncsym>
+-loadable_deinit : std::shared_ptr<deinitfuncsym>
+-hdr : LoadableHeader *
+{static} +extn : const char *const
+}
+class "PluginRegistry" as C_0000344814293694932198
+class C_0000344814293694932198 {
++add(std::string name, std::shared_ptr<LoadableModule> module) : void
++add(std::string name, std::shared_ptr<LoadableModule> module, bool mandatory, size_t prio) : void
++foreach(PluginRegistry::foreachcb cb) : void
+-modules : std::multimap<size_t,EntryType>
+}
+class "PluginManager" as C_0001902394450079387445
+class C_0001902394450079387445 {
++PluginManager(const PluginRegistry & registry) : void
++load() : void
++init() : int
++deinit() : int
++unload() : void
+-registry : PluginRegistry
+}
+C_0001239930631957938648 ..> C_0001831533805594469151
+C_0001685668650836176803 ..|> C_0001177672994416072102
+C_0001918742549770748049 --+ C_0000829810201714807217
+C_0001918742549770748049 ..> C_0000829810201714807217
+C_0001918742549770748049 --> C_0000829810201714807217 : -owner
+C_0001918742549770748049 <.. C_0000829810201714807217 : +<<friend>>
+C_0002116560727190644463 ..|> C_0001918742549770748049
+C_0002248952126325652250 ..> C_0000829810201714807217
+C_0002248952126325652250 o-- C_0001239930631957938648 : -path
+C_0002248952126325652250 --> C_0000829810201714807217 : -handle
+C_0002248952126325652250 ..> C_0002116560727190644463
+C_0002248952126325652250 --> C_0002116560727190644463 : -loadable_init
+C_0002248952126325652250 --> C_0002116560727190644463 : -loadable_deinit
+C_0000344814293694932198 ..> C_0002248952126325652250
+C_0000344814293694932198 o-- C_0002248952126325652250 : -modules
+C_0001902394450079387445 ..> C_0000344814293694932198
+C_0001902394450079387445 o-- C_0000344814293694932198 : -registry
+@enduml
+
