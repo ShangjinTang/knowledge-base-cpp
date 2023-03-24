@@ -14,11 +14,7 @@ PluginManager::PluginManager(const PluginRegistry &registry) : registry(registry
 
 void PluginRegistry::foreach (PluginRegistry::foreachcb cb) {
     for (auto entry : modules) {
-        std::string name;
-        bool mandatory;
-        size_t priority;
-        std::shared_ptr<LoadableModule> module;
-        std::tie(name, mandatory, priority, module) = entry.second;
+        auto &&[name, mandatory, priority, module] = entry.second;
         cb(name, module, mandatory, priority);
     }
 }

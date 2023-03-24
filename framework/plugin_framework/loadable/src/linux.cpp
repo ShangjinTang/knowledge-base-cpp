@@ -2,18 +2,20 @@
 #include <unistd.h>
 
 #include "Loadable.h"
+#include "LoadableFile.h"
 
 void *loadLibrary(const std::string &libname) {
     void *fwhandle = dlopen(libname.c_str(), RTLD_NOW | RTLD_GLOBAL);
     return fwhandle;
 }
 
-using namespace Loadable;
+using Loadable::ModuleHandle;
+using Loadable::SearchPath;
 
 /* Platform specific */
 bool SearchPath::fileAccessible(std::string path, std::string filename) {
     bool ret = false;
-    if (path.size() == 0) {
+    if (path.empty()) {
         path = ".";
     }
     std::string fullpath = path + "/" + filename;
@@ -34,7 +36,7 @@ ModuleHandle::ModuleHandle(std::string path) {
 }
 
 ModuleHandle::~ModuleHandle() {
-    if (handle) {
+    if (handle != nullptr) {
         dlclose(handle);
         handle = nullptr;
     }

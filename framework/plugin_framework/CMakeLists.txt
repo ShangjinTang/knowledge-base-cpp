@@ -11,6 +11,12 @@ set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTOR
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+if (MSVC)
+    add_compile_options(/W3 /WX)
+else()
+    add_compile_options(-W -Wall -Werror)
+endif()
+
 add_subdirectory(loadable)
 add_subdirectory(main)
 
