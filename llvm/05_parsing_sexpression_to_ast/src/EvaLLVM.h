@@ -5,8 +5,10 @@
 #define EvaLLVM_h
 
 #include <memory>
+#include <regex>
 #include <string>
 
+#include "./parser/EvaParser.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
@@ -14,7 +16,7 @@
 
 class EvaLLVM {
 public:
-    EvaLLVM() {
+    EvaLLVM() : parser(std::make_unique<syntax::EvaParser>()) {
         moduleInit();
         setupExternalFunctions();
     }
@@ -24,11 +26,10 @@ public:
      */
     void exec(const std::string& program) {
         // 1. Parse the program to AST.
-        // auto ast = parser->parser(program);
+        auto ast = parser->parse(program);
 
         // 2. Compile AST to LLVM IR.
-        // compile(ast);
-        compile();
+        compile(ast);
 
         // Print generated code.
         module->print(llvm::outs(), nullptr);
@@ -53,12 +54,12 @@ private:
     /**
      * Compiles an expression.
      */
-    void compile(/* TODO: ast */) {
+    void compile(const Exp& ast) {
         // 1. Create main function
         fn = createFunction("main", llvm::FunctionType::get(builder->getInt32Ty(), false));
 
         // 2. Compile main body
-        auto result = gen(/* ast */);
+        auto result = gen(ast);
 
         builder->CreateRet(builder->getInt32(0));
     }
@@ -107,20 +108,50 @@ private:
     /**
      * Main compile loop.
      */
-    llvm::Value* gen(/* exp */) {
-        // return builder->getInt32(42);
+    llvm::Value* gen(const Exp& exp) {
+        switch (exp.type) {
+            case ExpType::NUMBER: {
+                return builder->getInt32(exp.number);
+                break;
+            }
+            case ExpType::STRING: {
+                // Unescape special chars.
+                // TODO: support all chars or handle in parser.
+                auto re = std::regex("\\\\n");
+                auto str = std::regex_replace(exp.string, re, "\n");
+                return builder->CreateGlobalStringPtr(str);
+                break;
+            }
+            case ExpType::SYMBOL: {
+                // TODO: implement this
+                return builder->getInt32(0);
+                break;
+            }
+            case ExpType::LIST: {
+                auto tag = exp.list[0];
+                if (tag.type == ExpType::SYMBOL) {
+                    auto op = tag.string;
 
-        // Create a string
-        auto str = builder->CreateGlobalStringPtr("Hello, world!\n");
+                    // Print extern function:
+                    //     (printf "Value: %d" 42)
+                    if (op == "printf") {
+                        // Get function `printf`
+                        auto printfFn = module->getFunction("printf");
 
-        // Get function `printf`
-        auto printfFn = module->getFunction("printf");
+                        // Create args from exp list
+                        std::vector<llvm::Value*> args{};
+                        for (auto i = 1; i < exp.list.size(); i++) {
+                            args.push_back(gen(exp.list[i]));
+                        }
 
-        // Create args from str
-        std::vector<llvm::Value*> args{str};
-
-        // Call function `printf`
-        return builder->CreateCall(printfFn, args);
+                        // Call function `printf`
+                        return builder->CreateCall(printfFn, args);
+                    }
+                }
+                break;
+            }
+        }
+        return builder->getInt32(0);
     }
 
     /**
@@ -179,6 +210,11 @@ private:
      * Currently compiling function.
      */
     llvm::Function* fn;
+
+    /**
+     * Parser.
+     */
+    std::unique_ptr<syntax::EvaParser> parser;
 };
 
 #endif

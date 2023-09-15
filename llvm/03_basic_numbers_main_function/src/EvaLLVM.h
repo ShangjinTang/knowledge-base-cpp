@@ -22,10 +22,10 @@ public:
      * Executes a program.
      */
     void exec(const std::string& program) {
-        // 1. Parse to AST.
+        // 1. Parse the program to AST.
         // auto ast = parser->parser(program);
 
-        // 2. AST -> LLVM IR.
+        // 2. Compile AST to LLVM IR.
         // compile(ast);
         compile();
 
