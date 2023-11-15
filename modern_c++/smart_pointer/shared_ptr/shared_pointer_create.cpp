@@ -20,7 +20,7 @@ private:
 };
 
 int main() {
-    // Method 1: create from shared pointer (never use this)
+    // Method 1: create from raw pointer (never use this)
     Entity *rp_entity1 = new Entity("Alice");
     std::shared_ptr<Entity> p_entity1(rp_entity1);
     rp_entity1 = nullptr;
