@@ -5,5 +5,5 @@
 Installation:
 
 ```bash
-npm install --globnal syntax-cli
+npm install --global syntax-cli
 ```

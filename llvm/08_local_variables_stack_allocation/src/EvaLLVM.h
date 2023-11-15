@@ -51,6 +51,9 @@ private:
 
         // Create a new builder for the module.
         builder = std::make_unique<llvm::IRBuilder<>>(*ctx);
+
+        // Create a new builder for variables
+        varsBuilder = std::make_unique<llvm::IRBuilder<>>(*ctx);
     }
 
     /**
@@ -155,10 +158,13 @@ private:
                 auto varName = exp.string;
                 auto value = env->lookup(varName);
 
-                // 1. TODO: Local variables
+                // 1. Local variables.
+                if (auto localVar = llvm::dyn_cast<llvm::AllocaInst>(value)) {
+                    return builder->CreateLoad(localVar->getAllocatedType(), localVar, varName.c_str());
+                }
 
                 // 2. Global variables.
-                if (auto globalVar = llvm::dyn_cast<llvm::GlobalVariable>(value)) {
+                else if (auto globalVar = llvm::dyn_cast<llvm::GlobalVariable>(value)) {
                     return builder->CreateLoad(globalVar->getInitializer()->getType(), globalVar, varName.c_str());
                 }
 
@@ -171,24 +177,47 @@ private:
 
                     // Variable declaration:
                     //     (var x (+ y 10))
+                    //     (var (x number) 42)
+                    // Note: local variables are allocated on the stack.
                     if (op == "var") {
-                        // TODO: handle generic values.
-
-                        auto varName = exp.list[1].string;
+                        auto varNameDecl = exp.list[1];
+                        auto varName = extractVarName(varNameDecl);
                         // Initializer
-                        // TODO: local block environment
                         auto init = gen(exp.list[2], env);
-                        return createGlobalVar(varName, (llvm::Constant*)init)->getInitializer();
+                        // Type
+                        auto varTy = extractVarType(varNameDecl);
+                        // Variable
+                        auto varBinding = allocVar(varName, varTy, env);
+                        // Set value
+                        return builder->CreateStore(init, varBinding);
+                    }
+
+                    // Blocks:
+                    //     (set x 100)
+                    else if (op == "set") {
+                        auto varName = exp.list[1].string;
+
+                        // Value
+                        auto value = gen(exp.list[2], env);
+
+                        // Variable
+                        auto varBinding = env->lookup(varName);
+
+                        // Set value
+                        return builder->CreateStore(value, varBinding);
                     }
 
                     // Blocks:
                     //     (begin <expression>)
                     else if (op == "begin") {
+                        // Block scope.
+                        auto blockEnv = std::make_shared<Environment>(std::map<std::string, llvm::Value*>{}, env);
+
                         // Compile each expression within the block.
                         // Result is the latest evaluated expression.
                         llvm::Value* blockRes;
                         for (auto i = 1; i < exp.list.size(); i++) {
-                            blockRes = gen(exp.list[i], env);
+                            blockRes = gen(exp.list[i], blockEnv);
                         }
                         return blockRes;
                     }
@@ -252,6 +281,55 @@ private:
     }
 
     /**
+     * Extracts var or parameter name considering type.
+     *     x -> x
+     *     (x number) -> x
+     */
+    std::string extractVarName(const Exp& exp) {
+        return exp.type == ExpType::LIST ? exp.list[0].string : exp.string;
+    }
+
+    /**
+     * Extracts var or parameter name with i32 as default.
+     *     x -> i32
+     *     (x number) -> number
+     */
+    llvm::Type* extractVarType(const Exp& exp) {
+        return exp.type == ExpType::LIST ? getTypeFromString(exp.list[1].string) : builder->getInt32Ty();
+    }
+
+    /**
+     * Returns LLVM type from string representation.
+     */
+    llvm::Type* getTypeFromString(const std::string& type_) {
+        // number -> i32
+        if (type_ == "number") {
+            return builder->getInt32Ty();
+        }
+        // string -> i8* (aka char*)
+        if (type_ == "string") {
+            return builder->getInt8Ty()->getPointerTo();
+        }
+        // default:
+        return builder->getInt32Ty();
+    }
+
+    /**
+     * Allocate a local variable on the stack.
+     * Result is the alloca instruction.
+     */
+    llvm::Value* allocVar(const std::string& name, llvm::Type* type_, std::shared_ptr<Environment> env) {
+        varsBuilder->SetInsertPoint(&fn->getEntryBlock());
+
+        auto varAlloc = varsBuilder->CreateAlloca(type_, 0, name.c_str());
+
+        // Add to the environment.
+        env->define(name, varAlloc);
+
+        return varAlloc;
+    }
+
+    /**
      * Global LLVM context.
      *
      * It owns and manages the core "global" data of LLVM's core
@@ -273,6 +351,13 @@ private:
      * The main container class for the LLVM Intermediate Representation.
      */
     std::unique_ptr<llvm::Module> module;
+
+    /**
+     * Extra builder for variables declaration.
+     * This builder always prepends to the beginning of the
+     * function entry block.
+     */
+    std::unique_ptr<llvm::IRBuilder<>> varsBuilder;
 
     /**
      * IR Builder.
