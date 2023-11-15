@@ -5,6 +5,8 @@
 # Cmake Ignore
 
 build/
+CMakeUserPresets.json
+
 
 # C++ Ignore
 
