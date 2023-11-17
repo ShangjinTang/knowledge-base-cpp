@@ -1,0 +1,7 @@
+[requires]
+tiny-regex-c/cci.20210215
+[generators]
+CMakeDeps
+CMakeToolchain
+[layout]
+cmake_layout
