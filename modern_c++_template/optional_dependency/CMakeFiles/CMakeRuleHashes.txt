@@ -1,0 +1,4 @@
+# Hashes of file build rules.
+896f62aacf6f32bbde2809ad4dffd4b0 CMakeFiles/format
+7423ec26bd593bc36ec4ea777c322897 CMakeFiles/format-headers
+8c846100013fdb0ac7a09d646b1c47a6 CMakeFiles/format-sources
