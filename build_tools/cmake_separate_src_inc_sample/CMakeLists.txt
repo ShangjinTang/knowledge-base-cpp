@@ -12,12 +12,14 @@ add_subdirectory(src)
 
 add_custom_target(
   run
-  COMMAND src/prog
-  DEPENDS src/prog
-  WORKING_DIRECTORY ${CMAKE_PROJECT_DIR})
+  COMMENT "run prog"
+  COMMAND prog
+  DEPENDS prog
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 add_custom_target(
-  lldb
-  COMMAND lldb src/prog
-  DEPENDS src/prog
-  WORKING_DIRECTORY ${CMAKE_PROJECT_DIR})
+  gdb
+  COMMENT "gdb prog"
+  COMMAND gdb prog
+  DEPENDS prog
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src)

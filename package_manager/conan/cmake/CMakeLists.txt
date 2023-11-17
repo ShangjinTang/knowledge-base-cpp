@@ -17,5 +17,7 @@ add_subdirectory(src)
 
 add_custom_target(
   run
-  COMMAND src/main
-  WORKING_DIRECTORY ${CMAKE_PROJECT_DIR})
+  COMMENT "run main"
+  COMMAND main
+  DEPENDS main
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src)
