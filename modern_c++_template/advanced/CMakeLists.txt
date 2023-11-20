@@ -63,17 +63,22 @@ include(${CMAKE_SOURCE_DIR}/cmake/cpack.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/cppcheck.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/dependencies.cmake)
 
+if(BUILD_TESTING)
+  enable_testing()
+endif()
+
 # ##############################################################################
 # Define Targets
 # ##############################################################################
 add_subdirectory(libhello)
 add_subdirectory(apphello)
+add_subdirectory(libmymath)
 
 # ##############################################################################
 # Define Install Targets
 # ##############################################################################
 install(
-  TARGETS libhello apphello
+  TARGETS libhello apphello libmymath
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
