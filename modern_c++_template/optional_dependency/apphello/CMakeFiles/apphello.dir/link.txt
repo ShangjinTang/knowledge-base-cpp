@@ -1,1 +1,0 @@
-/usr/bin/c++ -Wl,-z,defs -Wl,-z,now -Wl,-z,relro -Wl,-pie -fpie -pipe -static-libstdc++ -fstack-clash-protection -fbounds-check -fstack-protector -fPIC CMakeFiles/apphello.dir/src/apphello.cpp.o -o apphello  ../libhello/liblibhello.a /usr/lib/x86_64-linux-gnu/libssl.so /usr/lib/x86_64-linux-gnu/libcrypto.so 
