@@ -324,7 +324,7 @@ private:
                         return builder->CreateStore(init, varBinding);
                     }
 
-                    // Blocks:
+                    // Variable update:
                     //     (set x 100)
                     else if (op == "set") {
                         auto varName = exp.list[1].string;

@@ -4,10 +4,15 @@
 #ifndef EvaLLVM_h
 #define EvaLLVM_h
 
+#include <llvm-14/llvm/IR/DerivedTypes.h>
+#include <llvm-14/llvm/IR/Instructions.h>
+
+#include <iterator>
 #include <map>
 #include <memory>
 #include <regex>
 #include <string>
+#include <vector>
 
 #include "./Environment.h"
 #include "./parser/EvaParser.h"
@@ -15,6 +20,16 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
+
+/**
+ * Class info. Contains struct type and field names.
+ */
+struct ClassInfo {
+    llvm::StructType* cls;
+    llvm::StructType* parent;
+    std::map<std::string, llvm::Type*> fieldsMap;
+    std::map<std::string, llvm::Function*> methodsMap;
+};
 
 // Generic binary operator.
 #define GEN_BINARY_OP(Op, varName)             \
@@ -30,6 +45,7 @@ public:
         moduleInit();
         setupExternalFunctions();
         setupGlobalEnvironment();
+        setupTargetTriple();
     }
 
     /**
@@ -323,8 +339,21 @@ private:
                     //     (var (x number) 42)
                     // Note: local variables are allocated on the stack.
                     else if (op == "var") {
+                        // Special case for class fields, which are already
+                        // defined during class into allocation:
+                        if (cls != nullptr) {
+                            return builder->getInt32(0);
+                        }
+
                         auto varNameDecl = exp.list[1];
                         auto varName = extractVarName(varNameDecl);
+
+                        // Special case for new as it allocates a variable:
+                        if (isNew(exp.list[2])) {
+                            auto instance = createInstance(exp.list[2], env, varName);
+                            return env->define(varName, instance);
+                        }
+
                         // Initializer
                         auto init = gen(exp.list[2], env);
                         // Type
@@ -337,20 +366,43 @@ private:
 
                     // Variable update:
                     //     (set x 100)
+                    // Property update:
+                    //     (set (prop self x) 100)
                     else if (op == "set") {
-                        auto varName = exp.list[1].string;
-
                         // Value
                         auto value = gen(exp.list[2], env);
 
-                        // Variable
-                        auto varBinding = env->lookup(varName);
+                        // 1. Properties
 
-                        // Set value
-                        builder->CreateStore(value, varBinding);
+                        // Special case for property writes:
+                        if (isProp(exp.list[1])) {
+                            auto instance = gen(exp.list[1].list[1], env);
+                            auto fieldName = exp.list[1].list[2].string;
+                            auto ptrName = std::string("p") + fieldName;
 
-                        // return value
-                        return value;
+                            auto cls = (llvm::StructType*)(instance->getType()->getContainedType(0));
+
+                            auto fieldIdx = getFieldIndex(cls, fieldName);
+
+                            auto address = builder->CreateStructGEP(cls, instance, fieldIdx, ptrName);
+
+                            builder->CreateStore(value, address);
+
+                            return value;
+                        }
+
+                        else {
+                            auto varName = exp.list[1].string;
+
+                            // Variable
+                            auto varBinding = env->lookup(varName);
+
+                            // Set value
+                            builder->CreateStore(value, varBinding);
+
+                            // return value
+                            return value;
+                        }
                     }
 
                     // Blocks:
@@ -384,6 +436,62 @@ private:
                         return builder->CreateCall(printfFn, args);
                     }
 
+                    // Class declaration:
+                    //     (class A <super> <body>)
+                    else if (op == "class") {
+                        auto name = exp.list[1].string;
+
+                        auto parent = exp.list[2].string == "null" ? nullptr : getClassByName(exp.list[2].string);
+
+                        // Currently compiling class.
+                        cls = llvm::StructType::create(*ctx, name);
+
+                        // Super class data always sit at the first element.
+                        if (parent != nullptr) {
+                            inheritClass(cls, parent);
+                        } else {
+                            // Allocate a new class info:
+                            classMap_[name] = {/* class */ cls,
+                                               /* parent */ parent,
+                                               /* fields */ {},
+                                               /* methods */ {}};
+                        }
+
+                        // Populate the class info with fields and methods:
+                        buildClassInfo(cls, exp, env);
+
+                        // Compiles the body:
+                        gen(exp.list[3], env);
+
+                        // Reset the class after compiling, so normal function
+                        // don't pick the class name prefix:
+                        cls = nullptr;
+
+                        return builder->getInt32(0);
+                    }
+
+                    // New operator:
+                    //     (new <class> <args>)
+                    else if (op == "new") {
+                        return createInstance(exp, env, "");
+                    }
+
+                    // Property access:
+                    //     (prop <instance> <name>)
+                    else if (op == "prop") {
+                        auto instance = gen(exp.list[1], env);
+                        auto fieldName = exp.list[2].string;
+                        auto ptrName = std::string("p") + fieldName;
+
+                        auto cls = (llvm::StructType*)(instance->getType()->getContainedType(0));
+
+                        auto fieldIdx = getFieldIndex(cls, fieldName);
+
+                        auto address = builder->CreateStructGEP(cls, instance, fieldIdx, ptrName);
+
+                        return builder->CreateLoad(cls->getElementType(fieldIdx), address, fieldName);
+                    }
+
                     // Function calls:
                     //     (square 2)
                     else {
@@ -415,6 +523,10 @@ private:
 
         // int printf(const char* format, ...);
         module->getOrInsertFunction("printf", llvm::FunctionType::get(builder->getInt32Ty(), bytePtrTy, true));
+
+        // void* malloc (size_t size), void* GC_malloc (size_t size);
+        // size_t is i64
+        module->getOrInsertFunction("GC_malloc", llvm::FunctionType::get(bytePtrTy, builder->getInt64Ty(), false));
     }
 
     /**
@@ -431,6 +543,13 @@ private:
         }
 
         GlobalEnv = std::make_shared<Environment>(globalRec, nullptr);
+    }
+
+    /**
+     * Sets up target triple
+     */
+    void setupTargetTriple() {
+        module->setTargetTriple("x86_64-pc-linux-gnu");
     }
 
     /**
@@ -468,12 +587,14 @@ private:
         if (type_ == "number") {
             return builder->getInt32Ty();
         }
+
         // string -> i8* (aka char*)
         if (type_ == "string") {
             return builder->getInt8Ty()->getPointerTo();
         }
+
         // default:
-        return builder->getInt32Ty();
+        return classMap_[type_].cls->getPointerTo();
     }
 
     /**
@@ -500,8 +621,11 @@ private:
         std::vector<llvm::Type*> paramTypes{};
 
         for (auto& param : params.list) {
+            auto paramName = extractVarName(param);
             auto paramTy = extractVarType(param);
-            paramTypes.push_back(paramTy);
+
+            // The `self` name is special, meaning instance of a class:
+            paramTypes.push_back(paramName == "self" ? (llvm::Type*)cls->getPointerTo() : paramTy);
         }
 
         return llvm::FunctionType::get(returnType, paramTypes, /* varargs */ false);
@@ -521,6 +645,13 @@ private:
         // Save current fn:
         auto prevFn = fn;
         auto prevBlock = builder->GetInsertBlock();
+
+        auto origName = fnName;
+
+        // Class method names:
+        if (cls != nullptr) {
+            fnName = std::string(cls->getName().data()) + "_" + fnName;
+        }
 
         // Override fn to compile body:
         auto newFn = createFunction(fnName, extractFunctionType(fnExp), env);
@@ -568,6 +699,173 @@ private:
     }
 
     /**
+     * Returns a type by name.
+     */
+    llvm::StructType* getClassByName(const std::string& name) {
+        return llvm::StructType::getTypeByName(*ctx, name);
+    }
+
+    /**
+     * Returns field index.
+     */
+    size_t getFieldIndex(llvm::StructType* cls, const std::string& fieldName) {
+        auto fields = &classMap_[cls->getName().data()].fieldsMap;
+        auto it = fields->find(fieldName);
+        return std::distance(fields->begin(), it);
+    }
+
+    /**
+     * Creates an instance of a class.
+     */
+    llvm::Value* createInstance(const Exp& exp, std::shared_ptr<Environment> env, const std::string& name) {
+        auto className = exp.list[1].string;
+        auto cls = getClassByName(className);
+
+        if (cls == nullptr) {
+            DIE << "[EvaLLVM] Unknown class " << cls;
+        }
+
+        // NOTE: stack allocation: (TODO: heap allocation)
+        // auto instance = name.empty() ? builder->CreateAlloca(cls) : builder->CreateAlloca(cls, 0, name);
+        //
+        // We do not use stack allocation for objects, since wo need
+        // to support constructor (factory) pattern, i.e. return an object
+        // from a callee to the caller, outside.
+        //
+        // Heap allocation:
+        auto instance = mallocInstance(cls, name);
+
+        // Call constructor:
+        auto ctor = module->getFunction(className + "_constructor");
+
+        std::vector<llvm::Value*> args{instance};
+
+        for (auto i = 2; i < exp.list.size(); i++) {
+            args.push_back(gen(exp.list[i], env));
+        }
+
+        builder->CreateCall(ctor, args);
+
+        return instance;
+    }
+
+    /**
+     * Allocates an object of a given class on the heap.
+     */
+    llvm::Value* mallocInstance(llvm::StructType* cls, const std::string& name) {
+        auto typeSize = builder->getInt64(getTypeSize(cls));
+
+        // void*
+        auto mallocPtr = builder->CreateCall(module->getFunction("GC_malloc"), typeSize, name);
+
+        // void* -> Point*
+        return builder->CreatePointerCast(mallocPtr, cls->getPointerTo());
+    }
+
+    /**
+     * Returns size of a type in bytes.
+     */
+    size_t getTypeSize(llvm::Type* type_) {
+        return module->getDataLayout().getTypeAllocSize(type_);
+    }
+
+    /**
+     * Inherit parent class fields.
+     */
+    void inheritClass(llvm::StructType* cls, llvm::StructType* parent) {
+        // TODO
+    }
+
+    /**
+     * Tagged lists.
+     */
+    bool isTaggedList(const Exp& exp, const std::string tag) {
+        return exp.type == ExpType::LIST && exp.list[0].type == ExpType::SYMBOL && exp.list[0].string == tag;
+    }
+
+    /**
+     * (var ...)
+     */
+    bool isVar(const Exp& exp) {
+        return isTaggedList(exp, "var");
+    }
+
+    /**
+     * (def ...)
+     */
+    bool isDef(const Exp& exp) {
+        return isTaggedList(exp, "def");
+    }
+
+    /**
+     * (new ...)
+     */
+    bool isNew(const Exp& exp) {
+        return isTaggedList(exp, "new");
+    }
+
+    /**
+     * (prop ...)
+     */
+    bool isProp(const Exp& exp) {
+        return isTaggedList(exp, "prop");
+    }
+
+    /**
+     * Build class body from class info.
+     */
+    void buildClassBody(llvm::StructType* cls) {
+        std::string className(cls->getName().data());
+
+        auto classInfo = &classMap_[className];
+
+        auto clsFields = std::vector<llvm::Type*>{};
+
+        // Field types:
+        for (const auto& fieldInfo : classInfo->fieldsMap) {
+            clsFields.push_back(fieldInfo.second);
+        }
+
+        cls->setBody(clsFields, /* packed */ false);
+
+        // Methods:
+        // TODO (vTable)
+    }
+
+    /**
+     * Extract fields and methods from a class expression.
+     */
+    void buildClassInfo(llvm::StructType* cls, const Exp& clsExp, std::shared_ptr<Environment> env) {
+        auto className = clsExp.list[1].string;
+        auto classInfo = &classMap_[className];
+
+        // Body block (begin ...):
+        auto body = clsExp.list[3];
+        for (auto i = 1; i < body.list.size(); i++) {
+            auto exp = body.list[i];
+
+            if (isVar(exp)) {
+                auto varNameDecl = exp.list[1];
+
+                auto fieldName = extractVarName(varNameDecl);
+                auto fieldTy = extractVarType(varNameDecl);
+
+                classInfo->fieldsMap[fieldName] = fieldTy;
+            }
+
+            else if (isDef(exp)) {
+                auto methodName = exp.list[1].string;
+                auto fnName = className + "_" + methodName;
+
+                classInfo->methodsMap[methodName] = createFunctionProto(fnName, extractFunctionType(exp), env);
+            }
+        }
+
+        // Create fields:
+        buildClassBody(cls);
+    }
+
+    /**
      * Global LLVM context.
      *
      * It owns and manages the core "global" data of LLVM's core
@@ -610,6 +908,16 @@ private:
      * Currently compiling function.
      */
     llvm::Function* fn;
+
+    /**
+     * Currently compiling class.
+     */
+    llvm::StructType* cls;
+
+    /**
+     * Class info.
+     */
+    std::map<std::string, ClassInfo> classMap_;
 
     /**
      * Parser.
