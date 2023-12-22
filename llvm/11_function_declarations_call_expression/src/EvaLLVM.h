@@ -258,8 +258,8 @@ private:
                         //   This is needed for `phi` instruction.
                         thenBlock = builder->GetInsertBlock();
                         //   Append the block to the function now.
-                        fn->insert(fn->end(), elseBlock);  // Note: code on llvm old version:
-                                                           //     fn->getBasicBlockList().push_back(elseBlock);
+                        // Note: code on llvm version>=16: fn->insert(fn->end(), elseBlock);
+                        fn->getBasicBlockList().push_back(elseBlock);
                         builder->SetInsertPoint(elseBlock);
                         auto elseRes = gen(exp.list[3], env);
                         builder->CreateBr(ifEndBlock);
@@ -269,8 +269,8 @@ private:
                         //   This is needed for `phi` instruction.
                         elseBlock = builder->GetInsertBlock();
                         //   Append the block to the function now.
-                        fn->insert(fn->end(), ifEndBlock);  // Note: code on llvm old version:
-                                                            //     fn->getBasicBlockList().push_back(ifEndBlock);
+                        // Note: code on llvm version>=16: fn->insert(fn->end(), ifEndBlock);
+                        fn->getBasicBlockList().push_back(ifEndBlock);
                         builder->SetInsertPoint(ifEndBlock);
 
                         // Result of the if-expression is `phi` in llvm
@@ -301,14 +301,14 @@ private:
                         builder->CreateCondBr(cond, bodyBlock, loopEndBlock);
 
                         // Body
-                        fn->insert(fn->end(), bodyBlock);  // Note: code on llvm old version:
-                                                           //     fn->getBasicBlockList().push_back(bodyBlock);
+                        // Note: code on llvm version>=16: fn->insert(fn->end(), bodyBlock);
+                        fn->getBasicBlockList().push_back(bodyBlock);
                         builder->SetInsertPoint(bodyBlock);
                         gen(exp.list[2], env);
                         builder->CreateBr(condBlock);
 
-                        fn->insert(fn->end(), loopEndBlock);  // Note: code on llvm old version:
-                                                              //     fn->getBasicBlockList().push_back(loopEndBlock);
+                        // Note: code on llvm version>=16: fn->insert(fn->end(), loopEndBlock);
+                        fn->getBasicBlockList().push_back(loopEndBlock);
                         builder->SetInsertPoint(loopEndBlock);
 
                         return builder->getInt32(0);
@@ -418,7 +418,7 @@ private:
     }
 
     /**
-     *
+     * Sets up the global environment.
      */
     void setupGlobalEnvironment() {
         std::map<std::string, llvm::Value*> globalObject{

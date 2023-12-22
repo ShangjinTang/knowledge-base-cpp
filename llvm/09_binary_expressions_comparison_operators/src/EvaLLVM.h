@@ -300,7 +300,7 @@ private:
     }
 
     /**
-     *
+     * Sets up the global environment.
      */
     void setupGlobalEnvironment() {
         std::map<std::string, llvm::Value*> globalObject{
