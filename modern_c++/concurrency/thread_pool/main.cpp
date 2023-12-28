@@ -12,8 +12,8 @@ class ThreadPool {
 public:
     using Task = std::function<void()>;
 
-    explicit ThreadPool(std::size_t numThreads) {
-        start(numThreads);
+    explicit ThreadPool(std::size_t num_threads) {
+        start(num_threads);
     }
 
     ThreadPool() = delete;
@@ -39,38 +39,38 @@ public:
         //         });
         auto result = task->get_future();
         {
-            std::unique_lock<std::mutex> lock{mEventMutex};
-            mTasks.emplace([task]() {
+            std::unique_lock<std::mutex> lock{event_mutex_};
+            tasks_.emplace([task]() {
                 (*task)();
             });
         }
-        mEventCV.notify_one();
+        event_cv_.notify_one();
         return result;
     }
 
 private:
-    std::vector<std::thread> mThreads;
-    std::condition_variable mEventCV;
-    std::mutex mEventMutex;
-    std::queue<Task> mTasks;
-    bool mStopping = false;
+    std::vector<std::thread> threads_;
+    std::condition_variable event_cv_;
+    std::mutex event_mutex_;
+    std::queue<Task> tasks_;
+    bool stopping_ = false;
 
-    void start(std::size_t numThreads) {
-        for (auto i = 0; i < numThreads; i++) {
-            mThreads.emplace_back([this] {
+    void start(std::size_t num_threads) {
+        for (auto i = 0; i < num_threads; i++) {
+            threads_.emplace_back([this] {
                 while (true) {
                     Task task;
                     {
-                        std::unique_lock<std::mutex> lock{mEventMutex};
-                        mEventCV.wait(lock, [this] {
-                            return mStopping || !mTasks.empty();
+                        std::unique_lock<std::mutex> lock{event_mutex_};
+                        event_cv_.wait(lock, [this] {
+                            return stopping_ || !tasks_.empty();
                         });
-                        if (mStopping && mTasks.empty()) {
+                        if (stopping_ && tasks_.empty()) {
                             break;
                         }
 
-                        task = std::move(mTasks.front());
-                        mTasks.pop();
+                        task = std::move(tasks_.front());
+                        tasks_.pop();
                     }
                     task();
                 }
@@ -80,12 +80,12 @@ private:
 
     void stop() noexcept {
         {
-            std::unique_lock<std::mutex> lock{mEventMutex};
-            mStopping = true;
+            std::unique_lock<std::mutex> lock{event_mutex_};
+            stopping_ = true;
         }
-        mEventCV.notify_all();
+        event_cv_.notify_all();
 
-        for (auto& thread : mThreads) {
+        for (auto& thread : threads_) {
             thread.join();
         }
     }
