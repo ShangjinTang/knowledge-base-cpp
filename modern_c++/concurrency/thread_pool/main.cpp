@@ -17,10 +17,24 @@ public:
     }
 
     ThreadPool() = delete;
+
     ThreadPool(const ThreadPool& other) = delete;
-    ThreadPool(ThreadPool&& other) noexcept = delete;
+
+    ThreadPool(ThreadPool&& other) noexcept {
+        *this = std::move(other);
+    }
+
     ThreadPool& operator=(const ThreadPool& other) = delete;
-    ThreadPool& operator=(ThreadPool&& other) noexcept = delete;
+
+    ThreadPool& operator=(ThreadPool&& other) noexcept {
+        if (this != &other) {
+            threads_ = std::move(other.threads_);
+            tasks_ = std::move(other.tasks_);
+            stopping_ = other.stopping_;
+            other.stopping_ = true;
+        }
+        return *this;
+    }
 
     ~ThreadPool() {
         stop();
