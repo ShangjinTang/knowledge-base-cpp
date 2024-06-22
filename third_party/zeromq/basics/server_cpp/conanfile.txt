@@ -1,0 +1,18 @@
+# https://conan.io/center
+
+[requires]
+cppzmq/4.10.0
+# test
+gtest/1.14.0
+
+[generators]
+CMakeDeps
+CMakeToolchain
+
+[layout]
+cmake_layout
+
+[options]
+
+
+# vim: ft=config
